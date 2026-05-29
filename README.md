@@ -47,8 +47,6 @@ pnpm run build
 pnpm run dev
 ```
 
-For phone camera access during local development, use Wrangler's quick tunnel from the dev UI by pressing `t`.
-
 Open:
 
 - `/` on the computer to create a room, show the phone QR code, and preview the stream while OBS is absent.

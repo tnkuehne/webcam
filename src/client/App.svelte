@@ -45,12 +45,22 @@
   {#snippet panel()}
     <div class="grid gap-3">
       {#if session.mode === "receiver"}
-        <StatusBlock
-          kind={session.statusKind}
-          title={session.statusTitle}
-          detail={session.statusDetail}
-          compact={!session.showDebug}
-        />
+        {#if session.obsReceiverActive}
+          <div class="grid justify-items-center gap-2 text-center">
+            <div
+              class="h-2.5 w-2.5 animate-[status-good_1.7s_ease-in-out_infinite] rounded-full bg-accent shadow-[0_0_0_4px_rgb(52_211_153_/_0.13)]"
+            ></div>
+            <strong>{session.statusTitle}</strong>
+            <p class="m-0 max-w-[280px] text-sm text-muted">{session.statusDetail}</p>
+          </div>
+        {:else}
+          <StatusBlock
+            kind={session.statusKind}
+            title={session.statusTitle}
+            detail={session.statusDetail}
+            compact={!session.showDebug}
+          />
+        {/if}
       {:else if session.mode === "camera"}
         <StatusBlock
           kind={session.statusKind}
@@ -78,7 +88,7 @@
       {/if}
     </div>
 
-    {#if session.mode !== "camera"}
+    {#if session.mode !== "camera" && !session.obsReceiverActive}
       <ReceiverPanel
         debug={session.showDebug}
         cameraQr={session.cameraQr}

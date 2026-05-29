@@ -44,6 +44,7 @@ export function createWebcamSession() {
 
   const title = mode === "camera" ? "Camera" : mode === "obs" ? "OBS Receiver" : "Receiver";
   let pairing = $derived(!hasRemoteVideo && mode !== "camera" && mode !== "obs");
+  let obsReceiverActive = $derived(mode === "receiver" && !receiverActive);
   let canDebug = $derived(mode !== "obs" && (mode !== "receiver" || receiverActive));
   let showDebug = $derived(debug && canDebug);
 
@@ -177,11 +178,7 @@ export function createWebcamSession() {
         setReceiverActive(message.receiverActive !== false);
         if (!receiverActive) {
           resetPeerConnection();
-          setStatus(
-            "good",
-            "OBS receiver active",
-            "This page stays available for pairing and will preview when OBS disconnects.",
-          );
+          setObsReceiverStatus();
           return;
         }
       }
@@ -194,11 +191,7 @@ export function createWebcamSession() {
     if (message.type === "receiver-deactivated") {
       setReceiverActive(false);
       resetPeerConnection();
-      setStatus(
-        "good",
-        "OBS receiver active",
-        "This page stays available for pairing and will preview when OBS disconnects.",
-      );
+      setObsReceiverStatus();
       log("Receiver preview paused because OBS became active.");
       return;
     }
@@ -219,6 +212,10 @@ export function createWebcamSession() {
 
     if (message.type === "peer-joined") {
       log(`${message.role} connected.`);
+      if (role === "receiver" && !receiverActive) {
+        setObsReceiverStatus();
+        return;
+      }
       if (message.role !== role && (role === "camera" || receiverActive)) {
         resetPeerConnection();
       }
@@ -230,6 +227,10 @@ export function createWebcamSession() {
 
     if (message.type === "peer-left") {
       log(`${message.role} disconnected.`);
+      if (role === "receiver" && !receiverActive) {
+        setObsReceiverStatus();
+        return;
+      }
       if (message.role === role) {
         log("Another page with this role left.");
         return;
@@ -487,6 +488,14 @@ export function createWebcamSession() {
     statusDetail = detail || "";
   }
 
+  function setObsReceiverStatus(): void {
+    setStatus(
+      "good",
+      "OBS is handling the camera stream",
+      "You can close this page.",
+    );
+  }
+
   function fail(message: string): void {
     setStatus("bad", "Failed", message);
     log(message);
@@ -549,6 +558,9 @@ export function createWebcamSession() {
     },
     get pairing() {
       return pairing;
+    },
+    get obsReceiverActive() {
+      return obsReceiverActive;
     },
     get canDebug() {
       return canDebug;

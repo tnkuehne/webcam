@@ -26,7 +26,8 @@ The iPhone opens a Safari camera page. Ubuntu opens a receiver page, or the clea
 
 - `public/index.html` is a single browser app with receiver, camera, and OBS modes.
 - `src/index.ts` is a Cloudflare Worker that serves app routes, creates rooms, generates QR codes, and upgrades signaling WebSockets.
-- `SignalingRoom` is a Durable Object keyed by room id. It forwards only SDP/ICE JSON between one `receiver` and one `camera`.
+- `SignalingRoom` is a Durable Object keyed by room id. It forwards only SDP/ICE JSON between one active receiver and one camera.
+- `/obs` has receiver priority. `/receiver` can preview the stream while OBS is absent, then stays available for pairing/status when OBS connects.
 - WebRTC is configured with `iceServers: []`. There is no STUN or TURN configuration.
 - ICE candidates with relay or server-reflexive candidate types are rejected.
 - The camera requests 4K/30 as an ideal constraint, then reports the actual Safari track settings.
@@ -43,9 +44,9 @@ For iPhone Safari camera access during local development, use Wrangler's quick t
 
 Open:
 
-- `/receiver` on Ubuntu to create a room and show the iPhone QR/link.
+- `/receiver` on Ubuntu to create a room, show the iPhone QR/link, and preview the stream while OBS is absent.
 - `/camera?mode=camera&room=...` on iPhone Safari.
-- `/obs?mode=obs&room=...` in OBS Browser Source for the clean video-only receiver.
+- `/obs?mode=obs&room=...` in OBS Browser Source for the clean video-only receiver. When OBS connects, it becomes the active receiver without requiring the `/receiver` page to close.
 
 ## Quality
 

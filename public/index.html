@@ -497,6 +497,7 @@
         facingMode: "environment",
         pendingCandidates: [],
         startedCamera: false,
+        receiverActive: mode === "obs",
         statsTimer: 0,
         incomingFrames: 0,
         lastIncomingAt: 0,
@@ -648,11 +649,14 @@
 
       function connectSignaling() {
         const scheme = location.protocol === "https:" ? "wss" : "ws";
-        const ws = new WebSocket(`${scheme}://${location.host}/ws/${state.room}/${role}`);
+        const clientMode = mode === "obs" ? "obs" : mode === "receiver" ? "preview" : "camera";
+        const ws = new WebSocket(
+          `${scheme}://${location.host}/ws/${state.room}/${role}?client=${clientMode}`,
+        );
         state.ws = ws;
 
         ws.addEventListener("open", () => {
-          log(`Signaling connected as ${role}.`);
+          log(`Signaling connected as ${role} (${clientMode}).`);
           sendSignal({ type: "hello" });
         });
         ws.addEventListener("message", (event) => handleSignal(JSON.parse(event.data)));
@@ -665,6 +669,15 @@
               "good",
               "Media still connected",
               "Signaling closed after setup; media path is still direct.",
+            );
+            return;
+          }
+          if (event.code === 4000 && mode === "receiver") {
+            resetPeerConnection();
+            setStatus(
+              "waiting",
+              "Receiver preview replaced",
+              "Another receiver page is active for this room.",
             );
             return;
           }
@@ -683,7 +696,45 @@
       async function handleSignal(message) {
         if (message.type === "joined") {
           log(`Room ${state.room} joined.`);
-          if (role === "receiver" && message.peers.includes("camera")) {
+          if (role === "receiver") {
+            state.receiverActive = message.receiverActive !== false;
+            if (!state.receiverActive) {
+              resetPeerConnection();
+              setStatus(
+                "waiting",
+                "OBS receiver active",
+                "This page stays available for pairing and will preview when OBS disconnects.",
+              );
+              return;
+            }
+          }
+          if (role === "receiver" && state.receiverActive && message.peers.includes("camera")) {
+            await startReceiverOffer();
+          }
+          return;
+        }
+
+        if (message.type === "receiver-deactivated") {
+          state.receiverActive = false;
+          resetPeerConnection();
+          setStatus(
+            "waiting",
+            "OBS receiver active",
+            "This page stays available for pairing and will preview when OBS disconnects.",
+          );
+          log("Receiver preview paused because OBS became active.");
+          return;
+        }
+
+        if (message.type === "receiver-activated") {
+          state.receiverActive = true;
+          setStatus(
+            "waiting",
+            "Receiver preview active",
+            "OBS is not connected, so this page can show the iPhone video.",
+          );
+          log("Receiver preview became active.");
+          if (message.peers.includes("camera")) {
             await startReceiverOffer();
           }
           return;
@@ -691,10 +742,10 @@
 
         if (message.type === "peer-joined") {
           log(`${message.role} connected.`);
-          if (message.role !== role) {
+          if (message.role !== role && (role === "camera" || state.receiverActive)) {
             resetPeerConnection();
           }
-          if (role === "receiver" && message.role === "camera") {
+          if (role === "receiver" && state.receiverActive && message.role === "camera") {
             await startReceiverOffer();
           }
           return;
@@ -703,13 +754,7 @@
         if (message.type === "peer-left") {
           log(`${message.role} disconnected.`);
           if (message.role === role) {
-            if (role === "receiver") {
-              setStatus(
-                "waiting",
-                "Receiver page active",
-                "Use only this receiver or OBS page for this room.",
-              );
-            }
+            log("Another page with this role left.");
             return;
           }
           resetPeerConnection();
@@ -797,6 +842,9 @@
       }
 
       async function startReceiverOffer() {
+        if (role !== "receiver" || !state.receiverActive) {
+          return;
+        }
         resetPeerConnection();
         await ensurePeerConnection();
         state.pc.addTransceiver("video", { direction: "recvonly" });

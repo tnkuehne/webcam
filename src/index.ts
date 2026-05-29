@@ -2,10 +2,14 @@ import { DurableObject } from "cloudflare:workers";
 import QRCode from "qrcode";
 
 type Role = "receiver" | "camera";
+type ClientMode = "camera" | "preview" | "obs";
 
 interface ConnectionState {
   role: Role;
+  clientMode: ClientMode;
+  active: boolean;
   connectedAt: number;
+  replacing?: boolean;
 }
 
 interface SignalEnvelope {
@@ -54,6 +58,10 @@ function getState(ws: WebSocket): ConnectionState | null {
   return ws.deserializeAttachment() as ConnectionState | null;
 }
 
+function setState(ws: WebSocket, state: ConnectionState): void {
+  ws.serializeAttachment(state);
+}
+
 export class SignalingRoom extends DurableObject<Env> {
   async fetch(request: Request): Promise<Response> {
     if (request.headers.get("Upgrade") !== "websocket") {
@@ -66,28 +74,34 @@ export class SignalingRoom extends DurableObject<Env> {
       return new Response("Invalid role", { status: 400 });
     }
 
-    for (const socket of this.ctx.getWebSockets()) {
-      const state = getState(socket);
-      if (state?.role === role) {
-        socket.close(4000, "Replaced by a new connection for this role");
-      }
-    }
+    const clientMode = this.clientModeFor(role, url.searchParams.get("client"));
+    const active = this.prepareForJoin(role, clientMode);
 
     const pair = new WebSocketPair();
     const [client, server] = Object.values(pair);
     this.ctx.acceptWebSocket(server);
-    server.serializeAttachment({ role, connectedAt: Date.now() } satisfies ConnectionState);
+    setState(server, {
+      role,
+      clientMode,
+      active,
+      connectedAt: Date.now(),
+    });
 
     this.send(server, {
       type: "joined",
       role,
+      clientMode,
+      receiverActive: role === "receiver" ? active : undefined,
       peers: this.connectedRoles(),
     });
-    this.broadcast(server, {
-      type: "peer-joined",
-      role,
-      peers: this.connectedRoles(),
-    });
+    if (active) {
+      this.broadcast(server, {
+        type: "peer-joined",
+        role,
+        clientMode,
+        peers: this.connectedRoles(),
+      });
+    }
 
     return new Response(null, { status: 101, webSocket: client });
   }
@@ -111,7 +125,11 @@ export class SignalingRoom extends DurableObject<Env> {
       return;
     }
 
-    this.forwardToPeer(state.role, {
+    if (state.role === "receiver" && !state.active) {
+      return;
+    }
+
+    this.forwardToPeer(ws, state.role, {
       ...envelope,
       from: state.role,
       receivedAt: Date.now(),
@@ -120,13 +138,140 @@ export class SignalingRoom extends DurableObject<Env> {
 
   async webSocketClose(ws: WebSocket, _code: number, _reason: string): Promise<void> {
     const state = getState(ws);
-    if (state) {
+    if (!state || state.replacing) {
+      return;
+    }
+
+    if (state.role === "receiver" && state.active) {
+      const promoted = this.promotePreviewReceiver(ws);
+      this.broadcast(ws, {
+        type: "peer-left",
+        role: state.role,
+        peers: this.connectedRoles(ws),
+      });
+      if (promoted) {
+        this.broadcast(promoted, {
+          type: "peer-joined",
+          role: "receiver",
+          clientMode: "preview",
+          peers: this.connectedRoles(),
+        });
+      }
+      return;
+    }
+
+    if (state.active) {
       this.broadcast(ws, {
         type: "peer-left",
         role: state.role,
         peers: this.connectedRoles(ws),
       });
     }
+  }
+
+  private clientModeFor(role: Role, value: string | null): ClientMode {
+    if (role === "camera") {
+      return "camera";
+    }
+    return value === "obs" ? "obs" : "preview";
+  }
+
+  private prepareForJoin(role: Role, clientMode: ClientMode): boolean {
+    if (role === "camera") {
+      for (const socket of this.ctx.getWebSockets()) {
+        const state = getState(socket);
+        if (state?.role === "camera") {
+          this.replaceSocket(socket, "Replaced by a new camera connection");
+        }
+      }
+      return true;
+    }
+
+    if (clientMode === "obs") {
+      for (const socket of this.ctx.getWebSockets()) {
+        const state = getState(socket);
+        if (!state || state.role !== "receiver") {
+          continue;
+        }
+        if (state.clientMode === "obs") {
+          this.replaceSocket(socket, "Replaced by a new OBS receiver");
+          continue;
+        }
+        if (state.active) {
+          state.active = false;
+          setState(socket, state);
+          this.send(socket, {
+            type: "receiver-deactivated",
+            activeReceiver: "obs",
+            peers: this.connectedRoles(),
+          });
+        }
+      }
+      return true;
+    }
+
+    if (this.hasActiveObsReceiver()) {
+      return false;
+    }
+
+    for (const socket of this.ctx.getWebSockets()) {
+      const state = getState(socket);
+      if (state?.role === "receiver" && state.active) {
+        this.replaceSocket(socket, "Replaced by a new preview receiver");
+      }
+    }
+    return true;
+  }
+
+  private hasActiveObsReceiver(): boolean {
+    for (const socket of this.ctx.getWebSockets()) {
+      const state = getState(socket);
+      if (state?.role === "receiver" && state.clientMode === "obs" && state.active) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private promotePreviewReceiver(exclude: WebSocket): WebSocket | null {
+    if (this.hasActiveObsReceiver()) {
+      return null;
+    }
+
+    let newest: { socket: WebSocket; state: ConnectionState } | null = null;
+    for (const socket of this.ctx.getWebSockets()) {
+      if (socket === exclude) {
+        continue;
+      }
+      const state = getState(socket);
+      if (state?.role !== "receiver" || state.clientMode !== "preview") {
+        continue;
+      }
+      if (!newest || state.connectedAt > newest.state.connectedAt) {
+        newest = { socket, state };
+      }
+    }
+
+    if (!newest) {
+      return null;
+    }
+
+    newest.state.active = true;
+    setState(newest.socket, newest.state);
+    this.send(newest.socket, {
+      type: "receiver-activated",
+      peers: this.connectedRoles(),
+    });
+    return newest.socket;
+  }
+
+  private replaceSocket(socket: WebSocket, reason: string): void {
+    const state = getState(socket);
+    if (state) {
+      state.replacing = true;
+      setState(socket, state);
+    }
+    socket.close(4000, reason);
   }
 
   private connectedRoles(exclude?: WebSocket): Role[] {
@@ -136,18 +281,21 @@ export class SignalingRoom extends DurableObject<Env> {
         continue;
       }
       const state = getState(socket);
-      if (state) {
+      if (state?.active) {
         roles.add(state.role);
       }
     }
     return Array.from(roles).sort();
   }
 
-  private forwardToPeer(from: Role, envelope: SignalEnvelope): void {
+  private forwardToPeer(sender: WebSocket, from: Role, envelope: SignalEnvelope): void {
     const target: Role = from === "receiver" ? "camera" : "receiver";
     for (const socket of this.ctx.getWebSockets()) {
+      if (socket === sender) {
+        continue;
+      }
       const state = getState(socket);
-      if (state?.role === target) {
+      if (state?.role === target && state.active) {
         this.send(socket, envelope);
       }
     }

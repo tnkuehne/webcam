@@ -17,7 +17,7 @@ interface SignalEnvelope {
   [key: string]: unknown;
 }
 
-const ROOM_PATTERN = /^[a-z0-9-]{6,64}$/;
+const ROOM_PATTERN = /^[A-Za-z0-9_-]{22,64}$/;
 const ROLES = new Set<Role>(["receiver", "camera"]);
 
 function json(data: unknown, init: ResponseInit = {}): Response {
@@ -44,10 +44,10 @@ async function serveApp(request: Request, env: Env): Promise<Response> {
 }
 
 function makeRoomId(): string {
-  const bytes = new Uint8Array(10);
+  const bytes = new Uint8Array(20);
   crypto.getRandomValues(bytes);
-  const alphabet = "abcdefghjkmnpqrstuvwxyz23456789";
-  return Array.from(bytes, (byte) => alphabet[byte % alphabet.length]).join("");
+  const binary = String.fromCharCode(...bytes);
+  return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
 }
 
 function isRole(value: string | null): value is Role {

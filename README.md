@@ -9,6 +9,18 @@ Use a phone as an OBS webcam source without a native phone app or a media relay.
 
 The phone opens a browser camera page. The computer opens a receiver page, or the clean OBS page in an OBS Browser Source. OBS Virtual Camera can then expose that source to video-call apps.
 
+## OBS setup
+
+1. Open `/` in a normal desktop browser.
+2. Add a new Browser Source in OBS.
+3. Copy the OBS URL from the receiver page into the Browser Source URL field.
+4. Set the Browser Source size to the OBS canvas size you want, for example `1920x1080` for Full HD or `3840x2160` for 4K.
+5. Scan the QR code with the phone and allow camera access.
+6. Once OBS is connected, the normal receiver page will say that OBS is handling the camera stream. You can close that receiver page; keep the phone page and OBS Browser Source open.
+7. Start OBS Virtual Camera and select it as the webcam in your video-call app.
+
+The `/obs` page renders only the incoming video. It does not show controls, debug UI, QR codes, or links, so it is safe to capture directly in OBS.
+
 ## Goals
 
 - Stream phone camera video to a computer with WebRTC.

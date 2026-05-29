@@ -18,9 +18,9 @@ export function readSessionRoute(location: Location): SessionRoute {
   const mode: Mode =
     requestedMode === "camera" || requestedMode === "obs" || requestedMode === "receiver"
       ? requestedMode
-      : location.pathname.includes("camera")
+      : location.pathname === "/camera"
         ? "camera"
-        : location.pathname.includes("obs")
+        : location.pathname === "/obs"
           ? "obs"
           : "receiver";
 

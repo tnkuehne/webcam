@@ -2,14 +2,9 @@ import { onCleanup, useDebounce, useEventListener, useInterval } from "runed";
 import { createRoom as createSignalingRoom, openSignaling } from "./signaling";
 import type { Mode, Role, SignalMessage, StatusKind } from "./types";
 import { errorMessage } from "./utils";
-import {
-  createLocalOnlyPeerConnection,
-  getIceServerCount,
-  isLocalOnlyCandidate,
-} from "./peer-connection";
-import { createRemoteVideoMonitor } from "./remote-video";
+import { createLocalOnlyPeerConnection, isLocalOnlyCandidate } from "./peer-connection";
+import { createReceiverVideo } from "./receiver-video.svelte";
 import { createLocalCamera } from "./local-camera.svelte";
-import { createReceiverMonitor } from "./receiver-monitor.svelte";
 import { createPairingLinks } from "./pairing-links.svelte";
 import { persistDebugInUrl, persistRoomInUrl, readSessionRoute } from "./session-url";
 
@@ -32,19 +27,10 @@ export function createWebcamSession() {
 
   let events = $state<string[]>([]);
 
-  const receiverMonitor = createReceiverMonitor(() => {
-    fail("A relay candidate was selected. Closing instead of carrying media through a relay.");
-    closePeerConnection();
-  });
-  const remoteVideo = createRemoteVideoMonitor({
-    onIncomingFormat: (format, summary) => {
-      receiverMonitor.setIncoming(format, summary);
-    },
-    onElementState: (state) => {
-      receiverMonitor.videoElementState = state;
-    },
-    onFrameSample: (sample) => {
-      receiverMonitor.frameSample = sample;
+  const receiverVideo = createReceiverVideo({
+    onRelayDetected: () => {
+      fail("A relay candidate was selected. Closing instead of carrying media through a relay.");
+      closePeerConnection();
     },
     onLog: (message) => log(message),
   });
@@ -78,7 +64,7 @@ export function createWebcamSession() {
     document,
     ["pointerdown", "touchend", "keydown"],
     () => {
-      remoteVideo.tryPlay("user interaction");
+      receiverVideo.tryPlay("user interaction");
     },
     { once: true },
   );
@@ -303,14 +289,14 @@ export function createWebcamSession() {
       },
       onTrack: (event) => {
         const [remoteStream] = event.streams;
-        if (!remoteStream || !remoteVideo.attachStream(remoteStream)) {
+        if (!remoteStream || !receiverVideo.attachStream(remoteStream)) {
           fail("Remote video track arrived without a media stream.");
           return;
         }
         hasRemoteVideo = true;
-        remoteVideo.tryPlay("track received");
+        receiverVideo.tryPlay("track received");
         setStatus("good", "Video connected", "OBS can capture this receiver page.");
-        remoteVideo.trackIncomingVideo();
+        receiverVideo.trackIncomingVideo();
         startStatsPolling();
       },
       onConnectionState: (state) => {
@@ -436,7 +422,7 @@ export function createWebcamSession() {
     if (!pc) {
       return;
     }
-    await receiverMonitor.poll(pc, remoteVideo.video);
+    await receiverVideo.pollPath(pc);
   }
 
   function sendSignal(message: SignalMessage): void {
@@ -469,7 +455,7 @@ export function createWebcamSession() {
   function resetPeerConnection(): void {
     closePeerConnection();
     pendingCandidates = [];
-    remoteVideo.clear();
+    receiverVideo.clear();
     hasRemoteVideo = false;
   }
 
@@ -487,7 +473,7 @@ export function createWebcamSession() {
   }
 
   function setRemoteVideo(node: HTMLVideoElement): void {
-    remoteVideo.setVideo(node);
+    receiverVideo.setVideo(node);
   }
 
   function setLocalVideo(node: HTMLVideoElement): void {
@@ -555,10 +541,10 @@ export function createWebcamSession() {
       return localCamera.summary;
     },
     get incomingSummary() {
-      return receiverMonitor.incomingSummary;
+      return receiverVideo.incomingSummary;
     },
     get pathSummary() {
-      return receiverMonitor.pathSummary;
+      return receiverVideo.pathSummary;
     },
     get cameraFormat() {
       return localCamera.format;
@@ -570,34 +556,34 @@ export function createWebcamSession() {
       return localCamera.trackState;
     },
     get incomingFormat() {
-      return receiverMonitor.incomingFormat;
+      return receiverVideo.incomingFormat;
     },
     get videoElementState() {
-      return receiverMonitor.videoElementState;
+      return receiverVideo.videoElementState;
     },
     get frameSample() {
-      return receiverMonitor.frameSample;
+      return receiverVideo.frameSample;
     },
     get inboundStats() {
-      return receiverMonitor.inboundStats;
+      return receiverVideo.inboundStats;
     },
     get selectedPath() {
-      return receiverMonitor.selectedPath;
+      return receiverVideo.selectedPath;
     },
     get localCandidate() {
-      return receiverMonitor.localCandidate;
+      return receiverVideo.localCandidate;
     },
     get remoteCandidate() {
-      return receiverMonitor.remoteCandidate;
+      return receiverVideo.remoteCandidate;
     },
     get relayState() {
-      return receiverMonitor.relayState;
+      return receiverVideo.relayState;
     },
     get events() {
       return events;
     },
     get iceServersCount() {
-      return getIceServerCount();
+      return 0;
     },
     mount,
     toggleDebug,

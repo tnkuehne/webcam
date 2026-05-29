@@ -1,19 +1,33 @@
-import { getIncomingFormat, getVideoElementState, sampleVideoFrame } from "./receiver-diagnostics";
+import {
+  getIncomingFormat,
+  getVideoElementState,
+  readPathDiagnostics,
+  sampleVideoFrame,
+} from "./receiver-diagnostics";
 import { errorMessage } from "./utils";
 
-type RemoteVideoMonitorCallbacks = {
-  onIncomingFormat: (format: string, summary: string) => void;
-  onElementState: (state: string) => void;
-  onFrameSample: (sample: string) => void;
+type ReceiverVideoCallbacks = {
+  onRelayDetected: () => void;
   onLog: (message: string) => void;
 };
 
-export function createRemoteVideoMonitor(callbacks: RemoteVideoMonitorCallbacks) {
+export function createReceiverVideo(callbacks: ReceiverVideoCallbacks) {
   let video: HTMLVideoElement | null = null;
   let stream: MediaStream | null = null;
   let incomingFrames = 0;
   let lastIncomingAt = 0;
   let lastFrameSampleAt = 0;
+
+  let incomingSummary = $state("Waiting");
+  let pathSummary = $state("Local direct only");
+  let incomingFormat = $state("Waiting");
+  let videoElementState = $state("Waiting");
+  let frameSample = $state("Waiting");
+  let inboundStats = $state("Waiting");
+  let selectedPath = $state("Waiting");
+  let localCandidate = $state("Waiting");
+  let remoteCandidate = $state("Waiting");
+  let relayState = $state("Blocked by configuration");
 
   function setVideo(node: HTMLVideoElement): void {
     video = node;
@@ -89,7 +103,8 @@ export function createRemoteVideoMonitor(callbacks: RemoteVideoMonitorCallbacks)
 
   function updateIncomingFormat(fps?: number): void {
     const next = getIncomingFormat(video, fps);
-    callbacks.onIncomingFormat(next.format, next.summary);
+    incomingFormat = next.format;
+    incomingSummary = next.summary;
   }
 
   function tryPlay(reason: string): void {
@@ -104,12 +119,37 @@ export function createRemoteVideoMonitor(callbacks: RemoteVideoMonitorCallbacks)
       })
       .catch((error: unknown) => {
         callbacks.onLog(`Video play blocked (${reason}): ${errorMessage(error)}`);
-        callbacks.onElementState("play blocked; click receiver page once");
+        videoElementState = "play blocked; click receiver page once";
       });
   }
 
+  async function pollPath(peer: RTCPeerConnection): Promise<void> {
+    const diagnostics = await readPathDiagnostics(peer, video);
+    if (diagnostics.inboundStats) {
+      inboundStats = diagnostics.inboundStats;
+    }
+    if (diagnostics.selectedPath) {
+      selectedPath = diagnostics.selectedPath;
+    }
+    if (diagnostics.pathSummary) {
+      pathSummary = diagnostics.pathSummary;
+    }
+    if (diagnostics.localCandidate) {
+      localCandidate = diagnostics.localCandidate;
+    }
+    if (diagnostics.remoteCandidate) {
+      remoteCandidate = diagnostics.remoteCandidate;
+    }
+    if (diagnostics.relayState) {
+      relayState = diagnostics.relayState;
+    }
+    if (diagnostics.relayDetected) {
+      callbacks.onRelayDetected();
+    }
+  }
+
   function updateElementState(): void {
-    callbacks.onElementState(getVideoElementState(video));
+    videoElementState = getVideoElementState(video);
   }
 
   function sampleRemoteFrame(now = performance.now()): void {
@@ -117,18 +157,45 @@ export function createRemoteVideoMonitor(callbacks: RemoteVideoMonitorCallbacks)
       return;
     }
     lastFrameSampleAt = now;
-    callbacks.onFrameSample(sampleVideoFrame(video));
+    frameSample = sampleVideoFrame(video);
   }
 
   return {
-    get video() {
-      return video;
+    get incomingSummary() {
+      return incomingSummary;
+    },
+    get pathSummary() {
+      return pathSummary;
+    },
+    get incomingFormat() {
+      return incomingFormat;
+    },
+    get videoElementState() {
+      return videoElementState;
+    },
+    get frameSample() {
+      return frameSample;
+    },
+    get inboundStats() {
+      return inboundStats;
+    },
+    get selectedPath() {
+      return selectedPath;
+    },
+    get localCandidate() {
+      return localCandidate;
+    },
+    get remoteCandidate() {
+      return remoteCandidate;
+    },
+    get relayState() {
+      return relayState;
     },
     setVideo,
     attachStream,
     clear,
     trackIncomingVideo,
     tryPlay,
-    updateElementState,
+    pollPath,
   };
 }

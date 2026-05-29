@@ -1,9 +1,7 @@
 import { isAllowedCandidate } from "./utils";
 
-const ICE_SERVERS: RTCIceServer[] = [];
-
 const ICE_CONFIG: RTCConfiguration = Object.freeze({
-  iceServers: ICE_SERVERS,
+  iceServers: [],
   iceCandidatePoolSize: 0,
 });
 
@@ -14,10 +12,6 @@ type PeerConnectionHandlers = {
   onConnectionState: (state: RTCPeerConnectionState) => void;
   onIceConnectionState: (state: RTCIceConnectionState) => void;
 };
-
-export function getIceServerCount(): number {
-  return ICE_SERVERS.length;
-}
 
 export function createLocalOnlyPeerConnection(handlers: PeerConnectionHandlers): RTCPeerConnection {
   const peer = new RTCPeerConnection(ICE_CONFIG);

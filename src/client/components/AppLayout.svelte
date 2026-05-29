@@ -49,7 +49,10 @@
     </aside>
   </main>
 {:else}
-  <main class="grid min-h-screen place-items-center bg-bg text-text">
+  <main
+    class="grid min-h-screen place-items-center bg-bg text-text"
+    style="background: linear-gradient(90deg, rgb(255 255 255 / 0.035) 1px, transparent 1px), linear-gradient(rgb(255 255 255 / 0.035) 1px, transparent 1px), #020504; background-size: 36px 36px;"
+  >
     {@render stage()}
     <aside
       class="mx-auto min-h-0 w-[min(100%,390px)] overflow-visible bg-transparent px-[22px] py-[34px]"

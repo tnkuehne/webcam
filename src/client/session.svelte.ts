@@ -177,7 +177,7 @@ export function createWebcamSession() {
         if (!receiverActive) {
           resetPeerConnection();
           setStatus(
-            "waiting",
+            "good",
             "OBS receiver active",
             "This page stays available for pairing and will preview when OBS disconnects.",
           );
@@ -194,7 +194,7 @@ export function createWebcamSession() {
       receiverActive = false;
       resetPeerConnection();
       setStatus(
-        "waiting",
+        "good",
         "OBS receiver active",
         "This page stays available for pairing and will preview when OBS disconnects.",
       );

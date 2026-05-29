@@ -501,6 +501,7 @@
         incomingFrames: 0,
         lastIncomingAt: 0,
         lastFrameSampleAt: 0,
+        orientationTimer: 0,
         debug: urlParams.get("debug") === "1" || hashParams.get("debug") === "1",
       };
 
@@ -591,6 +592,7 @@
         connectSignaling();
 
         if (mode === "camera") {
+          watchCameraOrientation();
           setStatus("waiting", "Camera permission", "Safari should ask for camera access.");
           startCamera().catch((error) => {
             log(`Auto-start did not complete: ${error.message || error}`);
@@ -871,6 +873,43 @@
         sendCameraMeta();
         setStatus("good", "Camera ready", "Waiting for the Ubuntu receiver.");
         log("Camera permission granted.");
+      }
+
+      function watchCameraOrientation() {
+        const scheduleRefresh = () => {
+          if (!state.stream) {
+            return;
+          }
+          clearTimeout(state.orientationTimer);
+          state.orientationTimer = window.setTimeout(() => {
+            refreshCameraForOrientation().catch((error) =>
+              log(`Camera orientation refresh failed: ${error.message || error}`),
+            );
+          }, 500);
+        };
+
+        window.addEventListener("orientationchange", scheduleRefresh);
+        window.addEventListener("resize", scheduleRefresh);
+        screen.orientation?.addEventListener?.("change", scheduleRefresh);
+      }
+
+      async function refreshCameraForOrientation() {
+        if (mode !== "camera" || !state.stream) {
+          return;
+        }
+        const sender = state.pc?.getSenders().find((item) => item.track?.kind === "video");
+        const oldStream = state.stream;
+        state.stream = null;
+        for (const track of oldStream.getTracks()) {
+          track.stop();
+        }
+        await startCamera();
+        const [track] = state.stream.getVideoTracks();
+        if (sender && track) {
+          await sender.replaceTrack(track);
+          await tuneVideoSender(sender, track);
+        }
+        log("Camera refreshed after orientation change.");
       }
 
       async function switchCamera() {

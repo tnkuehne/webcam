@@ -4,9 +4,7 @@
   "private": true,
   "scripts": {
     "check": "pnpm run typecheck && pnpm run lint && pnpm run format:check",
-    "deploy": "wrangler deploy",
-    "dev": "wrangler dev",
-    "start": "wrangler dev",
+    "dev": "wrangler dev --tunnel",
     "cf-typegen": "wrangler types",
     "format": "oxfmt --write README.md package.json tsconfig.json wrangler.jsonc .oxlintrc.json .oxfmtrc.json src public",
     "format:check": "oxfmt --check README.md package.json tsconfig.json wrangler.jsonc .oxlintrc.json .oxfmtrc.json src public",

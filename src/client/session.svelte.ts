@@ -248,6 +248,11 @@ export function createWebcamSession() {
         log("Another page with this role left.");
         return;
       }
+      if (pc?.connectionState === "connected") {
+        log("Ignoring peer-left because WebRTC media is still connected.");
+        refreshConnectedStatus();
+        return;
+      }
       resetPeerConnection();
       setStatus("waiting", "Peer disconnected", "Reconnect the phone camera page to resume.");
       return;
@@ -320,11 +325,7 @@ export function createWebcamSession() {
       onConnectionState: (state) => {
         log(`Peer connection: ${state}`);
         if (state === "connected") {
-          if (role === "camera") {
-            setStatus("good", "Sending video", "Keep this page open.");
-          } else {
-            setStatus("good", "Direct WebRTC connected", "Verify the selected ICE path below.");
-          }
+          refreshConnectedStatus();
           startStatsPolling();
         }
         if (["failed", "closed"].includes(state)) {
@@ -464,8 +465,16 @@ export function createWebcamSession() {
       return;
     }
     if (pc?.connectionState === "connected") {
-      setStatus("good", "Sending video", "Keep this page open.");
+      refreshConnectedStatus();
     }
+  }
+
+  function refreshConnectedStatus(): void {
+    if (role === "camera") {
+      setStatus("good", "Sending video", "Keep this page open.");
+      return;
+    }
+    setStatus("good", "Direct WebRTC connected", "Verify the selected ICE path below.");
   }
 
   function startStatsPolling(): void {

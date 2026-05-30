@@ -112,7 +112,7 @@ export function createWebcamSession() {
 
     if (mode === "camera") {
       setStatus("waiting", "Camera permission", "Your browser should ask for camera access.");
-      localCamera.start().catch((error: unknown) => {
+      startCamera().catch((error: unknown) => {
         log(`Auto-start did not complete: ${errorMessage(error)}`);
         setStatus(
           "waiting",
@@ -364,7 +364,7 @@ export function createWebcamSession() {
   }
 
   async function answerOffer(description: RTCSessionDescriptionInit): Promise<void> {
-    const localStream = await localCamera.start();
+    const localStream = await startCamera();
     resetPeerConnection();
     const peer = await ensurePeerConnection();
     for (const track of localStream.getTracks()) {
@@ -434,6 +434,17 @@ export function createWebcamSession() {
     if (mode === "camera") {
       await deviceOrientation.start();
     }
+  }
+
+  async function startCamera(): Promise<MediaStream> {
+    await enableDeviceOrientation().catch((error) =>
+      log(`Device orientation permission failed: ${errorMessage(error)}`),
+    );
+    const stream = await localCamera.start();
+    await enableDeviceOrientation().catch((error) =>
+      log(`Device orientation permission failed: ${errorMessage(error)}`),
+    );
+    return stream;
   }
 
   async function switchCamera(): Promise<void> {
@@ -552,9 +563,7 @@ export function createWebcamSession() {
   }
 
   function startCameraFromUi(): void {
-    enableDeviceOrientation()
-      .catch((error) => log(`Device orientation permission failed: ${errorMessage(error)}`))
-      .finally(() => localCamera.start().catch((error) => fail(errorMessage(error))));
+    startCamera().catch((error) => fail(errorMessage(error)));
   }
 
   function switchCameraFromUi(): void {

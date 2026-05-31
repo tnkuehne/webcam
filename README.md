@@ -9,6 +9,10 @@ Use a phone as an OBS webcam source without a native phone app or a media relay.
 
 The phone opens a browser camera page. The computer opens a receiver page, or the clean OBS page in an OBS Browser Source. OBS Virtual Camera can then expose that source to video-call apps.
 
+<p align="center">
+  <img src="https://raw.githubusercontent.com/tnkuehne/bifrost/refs/heads/main/docs/bifrost-demo.svg" alt="Animated Bifrost workflow: scan a QR code, mount the phone on the monitor, and use it as a webcam." width="100%" />
+</p>
+
 ## OBS setup
 
 1. Open `/` in a normal desktop browser.

@@ -1,0 +1,324 @@
+<svg xmlns="http://www.w3.org/2000/svg" role="img" viewBox="0 0 960 540">
+  <title>Bifrost animated workflow</title>
+  <desc>
+    A phone scans a Bifrost QR code on a desktop monitor, moves onto the top of
+    the monitor as the camera, and the monitor shows the phone as a webcam.
+  </desc>
+
+  <defs>
+    <linearGradient id="screen-glow" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#0e1b16" />
+      <stop offset="1" stop-color="#050807" />
+    </linearGradient>
+    <linearGradient id="camera-feed" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0" stop-color="#34d399" />
+      <stop offset="0.48" stop-color="#3b82f6" />
+      <stop offset="1" stop-color="#fbbf24" />
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="18" flood-color="#000" flood-opacity="0.36" stdDeviation="18" />
+    </filter>
+    <clipPath id="monitor-screen">
+      <rect x="150" y="120" width="660" height="330" rx="18" />
+    </clipPath>
+    <clipPath id="obs-preview">
+      <rect x="218" y="204" width="524" height="212" rx="12" />
+    </clipPath>
+    <clipPath id="phone-screen">
+      <rect x="430" y="54" width="100" height="178" rx="18" />
+    </clipPath>
+    <symbol id="person-feed" viewBox="0 0 380 214">
+      <rect width="380" height="214" fill="url(#camera-feed)" />
+      <circle cx="190" cy="72" r="42" fill="#f4f7f2" opacity="0.94" />
+      <path d="M120 196 C132 139 158 116 190 116 C222 116 248 139 260 196Z" fill="#10251d" opacity="0.9" />
+      <path d="M0 214 C62 155 103 162 148 122 C202 74 254 104 380 54 V214Z" fill="#020504" opacity="0.16" />
+      <rect width="68" height="214" fill="#fff" opacity="0.08" class="sheen" />
+    </symbol>
+    <style>
+      svg {
+        background: transparent;
+        color: #eff7f1;
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      }
+
+      .label {
+        fill: #eff7f1;
+        font-size: 22px;
+        font-weight: 760;
+      }
+
+      .small {
+        fill: #9fafaa;
+        font-size: 13px;
+        font-weight: 560;
+      }
+
+      .tiny {
+        fill: #9fafaa;
+        font-size: 11px;
+        font-weight: 700;
+      }
+
+      .panel {
+        fill: #111a16;
+        stroke: #314138;
+      }
+
+      .panel2 {
+        fill: #18231e;
+        stroke: #314138;
+      }
+
+      .pairing-screen {
+        animation: pairing-screen 11s ease-in-out infinite;
+      }
+
+      .work-screen {
+        animation: work-screen 11s ease-in-out infinite;
+      }
+
+      .phone {
+        animation: phone-move 11s ease-in-out infinite;
+        transform-box: fill-box;
+        transform-origin: center;
+      }
+
+      .phone-front {
+        animation: phone-front 11s ease-in-out infinite;
+      }
+
+      .phone-back {
+        animation: phone-back 11s ease-in-out infinite;
+      }
+
+      .phone-mounted-shadow {
+        animation: mounted-shadow 11s ease-in-out infinite;
+      }
+
+      .scan-line {
+        animation: scan-line 11s ease-in-out infinite;
+      }
+
+      .phone-pairing {
+        animation: phone-pairing 11s ease-in-out infinite;
+      }
+
+      .obs-feed {
+        animation: obs-feed 11s ease-in-out infinite;
+      }
+
+      .sheen {
+        animation: sheen 2.8s linear infinite;
+      }
+
+      @keyframes phone-move {
+        0% {
+          transform: translate(-170px, 190px) rotate(-8deg) scale(0.95);
+        }
+        14%,
+        31% {
+          transform: translate(-110px, 164px) rotate(-8deg) scale(0.95);
+        }
+        36% {
+          transform: translate(-72px, 90px) rotate(14deg) scale(0.86);
+        }
+        41%,
+        100% {
+          transform: translate(0, -88px) rotate(90deg) scale(0.62);
+        }
+      }
+
+      @keyframes phone-front {
+        0%,
+        38% {
+          opacity: 1;
+        }
+        43%,
+        100% {
+          opacity: 0;
+        }
+      }
+
+      @keyframes phone-back {
+        0%,
+        39% {
+          opacity: 0;
+        }
+        44%,
+        100% {
+          opacity: 1;
+        }
+      }
+
+      @keyframes pairing-screen {
+        0%,
+        31% {
+          opacity: 1;
+          transform: scale(1);
+        }
+        33%,
+        100% {
+          opacity: 0;
+          transform: scale(0.97);
+        }
+      }
+
+      @keyframes work-screen {
+        0%,
+        39% {
+          opacity: 0;
+          transform: translateY(0) scale(1);
+        }
+        40%,
+        100% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      @keyframes mounted-shadow {
+        0%,
+        39% {
+          opacity: 0;
+        }
+        44%,
+        100% {
+          opacity: 1;
+        }
+      }
+
+      @keyframes scan-line {
+        0%,
+        11%,
+        31%,
+        100% {
+          opacity: 0;
+          transform: translateY(-45px);
+        }
+        15%,
+        27% {
+          opacity: 1;
+        }
+        21% {
+          transform: translateY(82px);
+        }
+      }
+
+      @keyframes phone-pairing {
+        0%,
+        38% {
+          opacity: 1;
+        }
+        39%,
+        100% {
+          opacity: 0;
+        }
+      }
+
+      @keyframes obs-feed {
+        0%,
+        40% {
+          opacity: 0;
+          transform: translateY(20px) scale(0.96);
+        }
+        48%,
+        100% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      @keyframes sheen {
+        from {
+          transform: translateX(-150px);
+        }
+        to {
+          transform: translateX(430px);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          animation-duration: 0.001ms !important;
+          animation-iteration-count: 1 !important;
+        }
+      }
+    </style>
+  </defs>
+
+  <g filter="url(#shadow)">
+    <rect x="110" y="80" width="740" height="410" rx="28" fill="#0a0f0d" stroke="#314138" stroke-width="2" />
+    <rect x="130" y="100" width="700" height="370" rx="22" fill="#050807" stroke="#18231e" />
+    <rect x="150" y="120" width="660" height="330" rx="18" fill="url(#screen-glow)" />
+
+    <g clip-path="url(#monitor-screen)">
+      <g class="pairing-screen">
+        <rect x="150" y="120" width="660" height="330" fill="#07100d" />
+        <svg x="405" y="190" width="150" height="150" viewBox="0 0 29 29" shape-rendering="crispEdges">
+          <path fill="#ffffff" d="M0 0h29v29H0z" />
+          <path
+            stroke="#07100d"
+            d="M0 0.5h7m2 0h1m1 0h1m4 0h1m1 0h3m1 0h7M0 1.5h1m5 0h1m3 0h3m1 0h3m5 0h1m5 0h1M0 2.5h1m1 0h3m1 0h1m1 0h1m6 0h2m3 0h1m1 0h1m1 0h3m1 0h1M0 3.5h1m1 0h3m1 0h1m1 0h1m1 0h1m2 0h2m1 0h4m2 0h1m1 0h3m1 0h1M0 4.5h1m1 0h3m1 0h1m1 0h1m1 0h2m5 0h4m1 0h1m1 0h3m1 0h1M0 5.5h1m5 0h1m1 0h1m2 0h1m2 0h4m4 0h1m5 0h1M0 6.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M8 7.5h2m4 0h3M0 8.5h1m1 0h5m6 0h2m2 0h1m2 0h1m1 0h5M3 9.5h1m1 0h1m2 0h1m1 0h2m1 0h1m2 0h1m1 0h7m3 0h1M1 10.5h1m3 0h2m4 0h1m2 0h5m1 0h1m1 0h1M0 11.5h1m1 0h1m4 0h5m2 0h1m1 0h1m3 0h1m1 0h1m1 0h2m1 0h1M3 12.5h1m2 0h1m1 0h2m1 0h4m2 0h1m1 0h1m3 0h1m1 0h2M0 13.5h2m1 0h3m3 0h2m1 0h2m2 0h1m1 0h3m1 0h3m3 0h1M0 14.5h1m1 0h1m3 0h1m1 0h1m3 0h5m1 0h1m1 0h2m3 0h2M0 15.5h2m5 0h4m3 0h1m1 0h1m5 0h3m2 0h1M1 16.5h6m1 0h1m3 0h1m4 0h1m7 0h2M0 17.5h1m1 0h2m3 0h7m2 0h5m1 0h3m1 0h1m1 0h1M0 18.5h1m1 0h2m1 0h2m5 0h4m7 0h2m1 0h1M0 19.5h1m1 0h2m6 0h4m7 0h1m5 0h1M0 20.5h1m1 0h1m1 0h5m1 0h1m1 0h1m1 0h4m1 0h6m1 0h3M8 21.5h2m2 0h1m3 0h1m1 0h3m3 0h5M0 22.5h7m2 0h4m2 0h2m2 0h2m1 0h1m1 0h3M0 23.5h1m5 0h1m1 0h1m5 0h1m1 0h1m2 0h2m3 0h1m2 0h1M0 24.5h1m1 0h3m1 0h1m1 0h1m1 0h1m5 0h2m2 0h5m1 0h3M0 25.5h1m1 0h3m1 0h1m1 0h3m2 0h2m4 0h1m1 0h1m3 0h4M0 26.5h1m1 0h3m1 0h1m1 0h1m2 0h2m2 0h5m1 0h7M0 27.5h1m5 0h1m5 0h1m2 0h1m2 0h1m1 0h1m1 0h1m2 0h1m1 0h1M0 28.5h7m1 0h1m1 0h1m1 0h4m1 0h1m1 0h1m1 0h2m1 0h1m1 0h1"
+          />
+        </svg>
+        <rect x="415" y="204" width="130" height="5" rx="3" fill="#34d399" class="scan-line" />
+
+      </g>
+
+      <g class="work-screen">
+        <rect x="150" y="120" width="660" height="330" fill="#07100d" />
+
+        <rect x="196" y="154" width="568" height="260" rx="16" class="panel" />
+        <circle cx="212" cy="177" r="5" fill="#34d399" />
+        <rect x="228" y="171" width="96" height="10" rx="5" fill="#9fafaa" opacity="0.35" />
+        <rect x="218" y="204" width="524" height="212" rx="13" fill="#050807" stroke="#314138" />
+        <g clip-path="url(#obs-preview)">
+          <g class="obs-feed">
+            <use href="#person-feed" x="218" y="204" width="524" height="295" />
+          </g>
+        </g>
+      </g>
+    </g>
+  </g>
+
+  <path d="M412 490h136l16 30H396Z" fill="#0a0f0d" stroke="#314138" />
+  <rect x="342" y="516" width="276" height="16" rx="8" fill="#0a0f0d" stroke="#314138" />
+
+  <ellipse class="phone-mounted-shadow" cx="480" cy="103" rx="70" ry="12" fill="#000" opacity="0.36" />
+
+  <g class="phone" filter="url(#shadow)">
+    <g class="phone-back">
+      <rect x="408" y="28" width="144" height="232" rx="31" fill="#0a0f0d" stroke="#314138" stroke-width="2" />
+      <rect x="426" y="46" width="108" height="196" rx="24" fill="#101a15" stroke="#18231e" />
+      <rect x="442" y="64" width="76" height="40" rx="20" fill="#18231e" stroke="#314138" />
+      <circle cx="462" cy="84" r="11" fill="#050807" stroke="#9fafaa" stroke-opacity="0.6" stroke-width="3" />
+      <circle cx="496" cy="84" r="11" fill="#050807" stroke="#9fafaa" stroke-opacity="0.6" stroke-width="3" />
+      <circle cx="462" cy="84" r="4" fill="#34d399" opacity="0.8" />
+      <circle cx="496" cy="84" r="4" fill="#60a5fa" opacity="0.8" />
+    </g>
+
+    <g class="phone-front">
+      <path d="M438 236h84l12 24h-108Z" fill="#0a0f0d" stroke="#314138" class="phone-mounted-shadow" />
+      <rect x="408" y="28" width="144" height="232" rx="31" fill="#0a0f0d" stroke="#314138" stroke-width="2" />
+      <rect x="430" y="54" width="100" height="178" rx="19" fill="#050807" />
+      <rect x="452" y="42" width="56" height="5" rx="3" fill="#314138" />
+      <circle cx="480" cy="246" r="8" fill="#18231e" stroke="#314138" />
+
+      <g clip-path="url(#phone-screen)">
+        <rect x="430" y="54" width="100" height="178" fill="#0b1511" />
+        <g class="phone-pairing">
+          <rect x="452" y="96" width="56" height="56" rx="12" fill="#18231e" stroke="#314138" />
+          <path
+            d="M462 112v-8h10M498 112v-8h-10M462 136v8h10M498 136v8h-10"
+            fill="none"
+            stroke="#9fafaa"
+            stroke-width="4"
+            stroke-linecap="round"
+          />
+          <rect x="456" y="180" width="48" height="8" rx="4" fill="#9fafaa" opacity="0.65" />
+        </g>
+      </g>
+    </g> 
+  </g>
+</svg>
